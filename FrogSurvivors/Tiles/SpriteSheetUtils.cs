@@ -1,6 +1,7 @@
 ﻿using System.Numerics;
+using FrogSurvivors.Sprites;
 
-namespace FrogSurvivors;
+namespace FrogSurvivors.Tiles;
 
 public class SpriteSheetUtils
 {

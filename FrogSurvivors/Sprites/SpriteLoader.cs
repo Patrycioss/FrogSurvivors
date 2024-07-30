@@ -1,11 +1,11 @@
 ﻿using System.Numerics;
 using Raylib_cs;
 
-namespace FrogSurvivors;
+namespace FrogSurvivors.Sprites;
 
 public static class SpriteLoader
 {
-    private static Dictionary<string, AnimatedSprite?> _animatedSprites = new Dictionary<string, AnimatedSprite?>();
+    private static Dictionary<string, AnimatedSprite?> _animatedSprites = new();
 
     public static AnimatedSprite? LoadAnimatedSprite(string name, Texture2D texture, int columns, int rows,
         Vector2 frameSize, int frameSpacing, int frameCount, int offset = 0)
@@ -16,7 +16,7 @@ public static class SpriteLoader
             return animatedSprite;
         }
 
-        animatedSprite = new AnimatedSprite(texture, columns, rows, frameSize, frameSpacing, frameCount, offset);
+        animatedSprite = new AnimatedSprite(texture, columns, frameSize, frameSpacing, frameCount, offset);
         _animatedSprites.Add(name, animatedSprite);
         return animatedSprite;
     }

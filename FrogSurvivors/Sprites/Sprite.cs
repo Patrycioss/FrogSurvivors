@@ -1,7 +1,8 @@
 ﻿using System.Numerics;
+using FrogSurvivors.Tiles;
 using Raylib_cs;
 
-namespace FrogSurvivors;
+namespace FrogSurvivors.Sprites;
 
 public class Sprite
 {
@@ -16,12 +17,19 @@ public class Sprite
         _size = size;
     }
 
-    public void Render(Vector2 position, float rotation, float scale)
+    public Sprite(TiledTileSheet sheet, int frame)
+    {
+        _texture = sheet.SheetTexture;
+        _offset = SpriteSheetUtils.CalculateFramePosition(frame, sheet.TileSize, sheet.ColumnCount, sheet.TileSpacing);
+        _size = sheet.TileSize;
+    }
+
+    public void Render(Vector2 position, float rotation, float scale, Vector2 originOffset)
     {
         Rectangle source = new Rectangle(_offset, _size);
         Rectangle destination = new Rectangle(position, source.Size * scale);
 
-        Raylib.DrawTexturePro(_texture, source, destination, destination.Size / 2.0f, rotation,
+        Raylib.DrawTexturePro(_texture, source, destination, destination.Size / 2.0f + originOffset, rotation,
             Color.White);
     }
 }

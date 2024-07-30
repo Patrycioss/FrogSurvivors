@@ -1,18 +1,13 @@
 ﻿using System.Numerics;
 using System.Xml;
+using FrogSurvivors.Collision;
 using Raylib_cs;
 
-namespace FrogSurvivors;
+namespace FrogSurvivors.Tiles;
 
 public class TiledTileMap
 {
-    public struct Tileset(int first, TiledTileSheet tileSheet)
-    {
-        public readonly int First = first;
-        public readonly TiledTileSheet TileSheet = tileSheet;
-    }
-
-    public readonly List<Tileset> Tilesets;
+    public readonly TiledTileSheet TileSheet;
     public readonly int Width;
     public readonly int Height;
     public readonly int[,] Tiles;
@@ -21,35 +16,19 @@ public class TiledTileMap
     public readonly int TileHeight;
     public readonly Texture2D Texture;
 
+
     public TiledTileMap(string path)
     {
-        Tilesets = [];
-
         XmlDocument xmlDoc = new XmlDocument();
         xmlDoc.Load(path);
 
         string? directory = Path.GetDirectoryName(path);
         directory ??= Environment.CurrentDirectory;
 
-        var tilesets = xmlDoc.GetElementsByTagName("tileset");
+        var tilesetAttribs = xmlDoc.GetElementsByTagName("tileset")[0]!.Attributes;
 
-        for (var i = 0; i < tilesets.Count; i++)
-        {
-            var tileset = tilesets[i];
-            var tilesetAttributes = tileset!.Attributes;
-
-            string? source = tilesetAttributes!["source"]?.Value;
-            if (source == null)
-            {
-                Console.WriteLine($"Unable to load source path!");
-                continue;
-            }
-
-            Console.WriteLine($"source: {source}");
-
-            Tilesets.Add(new Tileset(int.Parse(tilesetAttributes!["firstgid"]!.Value),
-                new TiledTileSheet(Path.Combine(directory, source))));
-        }
+        string source = tilesetAttribs!["source"]?.Value!;
+        TileSheet = new TiledTileSheet(Path.Combine(directory, source));
 
         var mapAttribs = xmlDoc.GetElementsByTagName("map")[0]?.Attributes;
 
@@ -104,32 +83,45 @@ public class TiledTileMap
 
                 if (number <= 0) break;
 
-                foreach (var tileset in Tilesets)
-                {
-                    int setFirst = tileset.First;
-                    int setLast = setFirst + tileset.TileSheet.TileCount;
+                Vector2 tilePosition = new Vector2(columnIndex * TileSheet.TileWidth,
+                    rowIndex * TileSheet.TileHeight);
 
-                    if (number >= setFirst && number <= setLast)
-                    {
-                        var tileSheet = tileset.TileSheet;
-
-                        Vector2 tilePosition = new Vector2(columnIndex * tileSheet.TileWidth,
-                            rowIndex * tileSheet.TileHeight);
-
-                        Raylib.ImageDraw(ref Image, tileSheet.SheetImage,new Rectangle(tileSheet.GetTilePosition(number), tileSheet.TileSize), new Rectangle(tilePosition, tileSheet.TileSize), Color.White);
-                        break;
-                    }
-                }
+                Raylib.ImageDraw(ref Image, TileSheet.SheetImage,
+                    new Rectangle(TileSheet.GetTilePosition(number), TileSheet.TileSize),
+                    new Rectangle(tilePosition, TileSheet.TileSize), Color.White);
             }
         }
 
         Texture = Raylib.LoadTextureFromImage(Image);
         Raylib.ExportImage(Image, "TileMap.png");
     }
+    
+    public List<Collider> GetRectColliders()
+    {
+        var colliders = new List<Collider>();
+
+        for (int columnIndex = 0; columnIndex < Tiles.GetLength(0); columnIndex++)
+        {
+            for (int rowIndex = 0; rowIndex < Tiles.GetLength(1); rowIndex++)
+            {
+                int number = Tiles[columnIndex, rowIndex];
+
+                if (TileSheet.Properties[number].HasFlag(TileProperties.Collider))
+                {
+                    Collider collider =
+                        new Collider(new Vector2(columnIndex * TileWidth, rowIndex * TileHeight),
+                            TileSheet.TileSize);
+                    
+                    colliders.Add(collider);
+                }
+            }
+        }
+
+        return colliders;
+    }
 
     public void Render(Vector2 position, float rotation, float scale, Color tint)
     {
         Raylib.DrawTextureEx(Texture, position, rotation, scale, tint);
-       
     }
 }
